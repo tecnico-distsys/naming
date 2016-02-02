@@ -30,7 +30,7 @@ public class UDDINamingIT {
 
     // members
 
-    String uddiURL = "http://localhost:8081";
+    String uddiURL = "http://localhost:9090";
     String name = "MyWebServiceName";
     String url = "http://host:port/my-ws/endpoint";
 
