@@ -1,4 +1,4 @@
-package example.ws.uddi;
+package pt.ulisboa.tecnico.sdis.ws.uddi;
 
 import static org.junit.Assert.*;
 
