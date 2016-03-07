@@ -44,6 +44,9 @@ public class UDDINaming {
     /** JAX-R connection */
     private Connection conn;
 
+    /** UDDI URL */
+    private String url;
+    
     /** UDDI user name */
     private String username = "username";
     /** UDDI user password */
@@ -115,24 +118,36 @@ public class UDDINaming {
         props.setProperty("scout.proxy.transportClass",
                 "org.apache.juddi.v3.client.transport.JAXWSTransport");
         connFactory.setProperties(props);
+
+        // save URL
+        this.url = url;
     }
 
     //
     // Accessors
     //
 
+    /** Return UDDI server address */
+	public String getUDDIUrl() {
+		return url;
+	}
+    
+	/** Return username */
     public String getUsername() {
         return username;
     }
 
+    /** Set username */
     public void setUsername(String username) {
         this.username = username;
     }
 
+    /** Set password */
     public void setPassword(char[] password) {
         this.password = password;
     }
 
+    /** get print debug option value */
     public boolean isPrintDebug() {
         return debugFlag;
     }
