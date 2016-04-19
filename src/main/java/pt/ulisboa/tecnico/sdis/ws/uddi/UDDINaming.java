@@ -265,7 +265,12 @@ public class UDDINaming {
     public Collection<String> list(String orgName) throws JAXRException {
         autoConnect();
         try {
-            return queryAll(orgName);
+        	List<UDDIRecord> rs = queryAll(orgName);
+        	
+        	List<String> l = new ArrayList<>();
+        	for (UDDIRecord r : rs)
+        		l.add(r.getUrl());
+            return l;
         } finally {
             autoDisconnect();
         }
@@ -275,7 +280,7 @@ public class UDDINaming {
     public String lookup(String orgName) throws JAXRException {
         autoConnect();
         try {
-            return query(orgName);
+            return query(orgName).getUrl();
         } finally {
             autoDisconnect();
         }
@@ -296,7 +301,8 @@ public class UDDINaming {
     public void bind(String orgName, String url) throws JAXRException {
         autoConnect();
         try {
-            publish(orgName, url);
+        	UDDIRecord record = new UDDIRecord(orgName, url);
+            publish(record);
 
         } finally {
             autoDisconnect();
@@ -308,7 +314,8 @@ public class UDDINaming {
         autoConnect();
         try {
             deleteAll(orgName);
-            publish(orgName, url);
+        	UDDIRecord record = new UDDIRecord(orgName, url);
+            publish(record);
 
         } finally {
             autoDisconnect();
@@ -319,8 +326,8 @@ public class UDDINaming {
     // private implementation
     //
 
-    private Collection<String> queryAll(String orgName) throws JAXRException {
-        List<String> result = new ArrayList<String>();
+    private List<UDDIRecord> queryAll(String orgName) throws JAXRException {
+        List<UDDIRecord> records = new ArrayList<UDDIRecord>();
 
         // search by name
         Collection<String> findQualifiers = new ArrayList<String>();
@@ -339,7 +346,7 @@ public class UDDINaming {
             System.out.printf("Found %d organizations%n", orgs.size());
 
         for (Organization o : orgs) {
-            @SuppressWarnings("unchecked")
+        	@SuppressWarnings("unchecked")
             Collection<Service> services = o.getServices();
             if (debugFlag)
                 System.out.printf("Found %d services%n", services.size());
@@ -353,19 +360,22 @@ public class UDDINaming {
                             serviceBindinds.size());
 
                 for (ServiceBinding sb : serviceBindinds) {
-                    result.add(sb.getAccessURI());
+                	String org = o.getName().getValue();
+                	String url = sb.getAccessURI();
+                    UDDIRecord record = new UDDIRecord(org, url);
+                    records.add(record);
                 }
             }
         }
 
         // service binding not found
         if (debugFlag)
-            System.out.printf("Returning list with size %d%n", result.size());
-        return result;
+            System.out.printf("Returning list with size %d%n", records.size());
+        return records;
     }
 
-    private String query(String orgName) throws JAXRException {
-        Collection<String> listResult = queryAll(orgName);
+    private UDDIRecord query(String orgName) throws JAXRException {
+        List<UDDIRecord> listResult = queryAll(orgName);
         int listResultSize = listResult.size();
 
         if (listResultSize == 0) {
@@ -427,9 +437,9 @@ public class UDDINaming {
         }
     }
 
-    private boolean publish(String orgName, String url) throws JAXRException {
+    private boolean publish(UDDIRecord record) throws JAXRException {
         // derive other names from organization name
-        String serviceName = orgName + " service";
+        String serviceName = record.getOrganization() + " service";
         String bindingDesc = serviceName + " binding";
 
         if (debugFlag) {
@@ -437,7 +447,7 @@ public class UDDINaming {
             System.out.printf("Derived binding description %s%n", bindingDesc);
         }
 
-        return publish(orgName, serviceName, bindingDesc, url);
+        return publish(record.getOrganization(), serviceName, bindingDesc, record.getUrl());
     }
 
     private boolean publish(String orgName, String serviceName,
