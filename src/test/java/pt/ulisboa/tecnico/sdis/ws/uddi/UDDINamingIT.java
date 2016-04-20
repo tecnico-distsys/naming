@@ -14,115 +14,111 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Test suite
+ * Integration Test suite
  */
 public class UDDINamingIT {
 
-    // static members
-    static final String UDDI_URL = "http://localhost:9090";
+	// static members
+	static final String UDDI_URL = "http://localhost:9090";
 
-    static final String TEST_NAME = "TestWebServiceName";
-    static final String TEST_URL = "http://host:port/my-ws/endpoint";
+	static final String TEST_NAME = "TestWebServiceName";
+	static final String TEST_URL = "http://host:port/my-ws/endpoint";
 
-    static final String TEST_NAME_WILDCARD = TEST_NAME.substring(0, 14) + "%";
-    
+	static final String TEST_NAME_WILDCARD = TEST_NAME.substring(0, 14) + "%";
 
-    // one-time initialization and clean-up
+	// one-time initialization and clean-up
 
-    @BeforeClass
-    public static void oneTimeSetUp() {
-    }
+	@BeforeClass
+	public static void oneTimeSetUp() {
+	}
 
-    @AfterClass
-    public static void oneTimeTearDown() {
-    }
+	@AfterClass
+	public static void oneTimeTearDown() {
+	}
 
+	// members
 
-    // members
+	private UDDINaming uddiNaming;
 
-    private UDDINaming uddiNaming;
+	// initialization and clean-up for each test
 
+	@Before
+	public void setUp() throws Exception {
+		uddiNaming = new UDDINaming(UDDI_URL);
+	}
 
-    // initialization and clean-up for each test
+	@After
+	public void tearDown() throws Exception {
+		uddiNaming.unbind(TEST_NAME_WILDCARD);
+		uddiNaming = null;
+	}
 
-    @Before
-    public void setUp() throws Exception {
-        uddiNaming = new UDDINaming(UDDI_URL);
-    }
+	// tests
 
-    @After
-    public void tearDown() throws Exception {
-    	uddiNaming.unbind(TEST_NAME_WILDCARD);
-        uddiNaming = null;
-    }
+	@Test
+	public void testRebindLookup() throws Exception {
+		// publish to UDDI
+		uddiNaming.rebind(TEST_NAME, TEST_URL);
 
+		// query UDDI
+		String endpointAddress = uddiNaming.lookup(TEST_NAME);
 
-    // tests
+		assertNotNull(endpointAddress);
+		assertEquals(/* expected */ TEST_URL, /* actual */ endpointAddress);
+	}
 
-    @Test
-    public void testRebindLookup() throws Exception {
-        // publish to UDDI
-        uddiNaming.rebind(TEST_NAME, TEST_URL);
+	@Test
+	public void testRebindLookupWithWildcard() throws Exception {
+		// publish to UDDI
+		uddiNaming.rebind(TEST_NAME, TEST_URL);
 
-        // query UDDI
-        String endpointAddress = uddiNaming.lookup(TEST_NAME);
+		// query UDDI using a wild-card character '%'
+		String endpointAddress = uddiNaming.lookup(TEST_NAME_WILDCARD);
 
-        assertNotNull(endpointAddress);
-        assertEquals(/* expected */ TEST_URL, /* actual */ endpointAddress);
-    }
+		assertNotNull(endpointAddress);
+		assertEquals(/* expected */ TEST_URL, /* actual */ endpointAddress);
+	}
 
-    @Test
-    public void testRebindLookupWithWildcard() throws Exception {
-        // publish to UDDI
-        uddiNaming.rebind(TEST_NAME, TEST_URL);
+	@Test
+	public void testRebindLookupRecord() throws Exception {
+		// publish to UDDI
+		UDDIRecord inputRecord = new UDDIRecord(TEST_NAME, TEST_URL);
+		uddiNaming.rebind(inputRecord);
 
-        // query UDDI using a wild-card character '%'
-        String endpointAddress = uddiNaming.lookup(TEST_NAME_WILDCARD);
+		// query UDDI
+		UDDIRecord outputRecord = uddiNaming.lookupRecord(TEST_NAME);
+		assertNotNull(outputRecord);
 
-        assertNotNull(endpointAddress);
-        assertEquals(/* expected */ TEST_URL, /* actual */ endpointAddress);
-    }
+		String endpointAddress = outputRecord.getUrl();
+		assertNotNull(endpointAddress);
+		assertTrue(inputRecord.equals(outputRecord));
+	}
 
-    @Test
-    public void testRebindLookupRecord() throws Exception {
-        // publish to UDDI
-        UDDIRecord inputRecord = new UDDIRecord(TEST_NAME, TEST_URL);
-        uddiNaming.rebind(inputRecord);
+	@Test
+	public void testRebindListRecordsWithWildcard() throws Exception {
+		// publish to UDDI with separate arguments
+		final String name1 = TEST_NAME + "1";
+		final String url1 = TEST_URL + "1";
+		final UDDIRecord record1 = new UDDIRecord(name1, url1);
+		uddiNaming.rebind(name1, url1);
+		// publish record to UDDI
+		final String name2 = TEST_NAME + "2";
+		final String url2 = TEST_URL + "2";
+		final UDDIRecord record2 = new UDDIRecord(name2, url2);
+		uddiNaming.rebind(record2);
+		// create record but do not publish it
+		final String name3 = TEST_NAME + "3";
+		final String url3 = TEST_URL + "3";
+		final UDDIRecord record3 = new UDDIRecord(name3, url3);
 
-        // query UDDI
-        UDDIRecord outputRecord = uddiNaming.lookupRecord(TEST_NAME);
-        assertNotNull(outputRecord);
-        
-        String endpointAddress = outputRecord.getUrl();
-        assertNotNull(endpointAddress);
-        assertTrue(inputRecord.equals(outputRecord));
-    }
+		// query UDDI using a wild-card character '%'
+		Collection<UDDIRecord> records = uddiNaming.listRecords(TEST_NAME_WILDCARD);
 
-    @Test
-    public void testRebindListRecordsWithWildcard() throws Exception {
-        // publish to UDDI with separate arguments
-        final String name1 = TEST_NAME + "1";
-        final String url1 = TEST_URL + "1";
-        final UDDIRecord record1 = new UDDIRecord(name1, url1);  
-        uddiNaming.rebind(name1, url1);
-        // publish record to UDDI
-        final String name2 = TEST_NAME + "2";
-        final String url2 = TEST_URL + "2";
-        final UDDIRecord record2 = new UDDIRecord(name2, url2);  
-        uddiNaming.rebind(record2);
-        // create record but do not publish it
-        final String name3 = TEST_NAME + "3";
-        final String url3 = TEST_URL + "3";
-        final UDDIRecord record3 = new UDDIRecord(name3, url3);  
-
-        // query UDDI using a wild-card character '%'
-        Collection<UDDIRecord> records = uddiNaming.listRecords(TEST_NAME_WILDCARD);
-        
-        assertNotNull(records);
-        assertEquals(/* expected */ 2, /* actual */ records.size());
-        assertTrue(records.contains(record1));
-        assertTrue(records.contains(record2));
-        assertFalse(records.contains(record3));
-    }
+		assertNotNull(records);
+		assertEquals(/* expected */ 2, /* actual */ records.size());
+		assertTrue(records.contains(record1));
+		assertTrue(records.contains(record2));
+		assertFalse(records.contains(record3));
+	}
 
 }

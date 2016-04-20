@@ -1,25 +1,28 @@
 package pt.ulisboa.tecnico.sdis.ws.uddi;
 
 /**
- * 	Immutable class that represents a simplified UDDI record.
- * 	
- * 	@author Miguel Pardal
+ * Immutable class that represents a simplified UDDI record.
+ * 
+ * @author Miguel Pardal
  */
 public class UDDIRecord {
 
+	public String attachment;
+
 	/**
-	 * 	Organization name
+	 * Organization name
 	 */
 	private String name;
-	
+
 	/**
-	 *	Service URL 
+	 * Service URL
 	 */
 	private String url;
-	
+
 	/**
-	 * Constructs a UDDI record with the provided organization name and service URL
-	 * 	
+	 * Constructs a UDDI record with the provided organization name and service
+	 * URL
+	 * 
 	 * @param orgName
 	 * @param url
 	 */
@@ -32,7 +35,7 @@ public class UDDIRecord {
 		if (orgName.length() == 0)
 			throw new IllegalArgumentException("Organization name cannot be empty!");
 		this.name = orgName;
-		
+
 		if (url == null)
 			throw new IllegalArgumentException("URL cannot be null!");
 		url = url.trim();
@@ -40,7 +43,7 @@ public class UDDIRecord {
 			throw new IllegalArgumentException("URL cannot be empty!");
 		this.url = url;
 	}
-	
+
 	/**
 	 * @return Organization name
 	 */
@@ -55,7 +58,9 @@ public class UDDIRecord {
 		return url;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
@@ -63,7 +68,9 @@ public class UDDIRecord {
 		return "UDDIRecord [name=" + name + ", url=" + url + "]";
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
@@ -75,7 +82,9 @@ public class UDDIRecord {
 		return result;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -99,5 +108,5 @@ public class UDDIRecord {
 			return false;
 		return true;
 	}
-	
+
 }
