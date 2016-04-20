@@ -61,6 +61,9 @@ public class UDDINaming {
     /** option to print JNDI and JAX-R debug messages */
     private boolean debugFlag = false;
 
+    /** option to print JNDI and JAX-R trace messages */
+    private boolean traceFlag = false;
+
     //
     // Constructors
     //
@@ -88,7 +91,8 @@ public class UDDINaming {
             // Could not find using JNDI
             if (debugFlag) {
                 System.out.println("Caught " + e);
-                e.printStackTrace(System.out);
+                if (traceFlag)
+                	e.printStackTrace(System.out);
             }
 
             // try factory method from scout
@@ -262,15 +266,29 @@ public class UDDINaming {
     //
 
     /** Returns a collection of URL bound to the name */
-    public Collection<String> list(String orgName) throws JAXRException {
+    public Collection<UDDIRecord> listRecords(String orgName) throws JAXRException {
         autoConnect();
         try {
-        	List<UDDIRecord> rs = queryAll(orgName);
-        	
-        	List<String> l = new ArrayList<>();
-        	for (UDDIRecord r : rs)
-        		l.add(r.getUrl());
-            return l;
+        	return queryAll(orgName);
+        } finally {
+            autoDisconnect();
+        }
+    }
+
+    /** Returns a collection of URL bound to the name */
+    public Collection<String> list(String orgName) throws JAXRException {
+    	Collection<UDDIRecord> records = listRecords(orgName);
+    	List<String> urls = new ArrayList<>();
+    	for (UDDIRecord record : records)
+    		urls.add(record.getUrl());
+    	return urls;
+    }
+
+    /** Returns the first record associated with the specified name */
+    public UDDIRecord lookupRecord(String orgName) throws JAXRException {
+        autoConnect();
+        try {
+            return query(orgName);
         } finally {
             autoDisconnect();
         }
@@ -278,12 +296,8 @@ public class UDDINaming {
 
     /** Returns the first URL associated with the specified name */
     public String lookup(String orgName) throws JAXRException {
-        autoConnect();
-        try {
-            return query(orgName).getUrl();
-        } finally {
-            autoDisconnect();
-        }
+    	UDDIRecord record = lookupRecord(orgName);
+    	return record.getUrl();
     }
 
     /** Destroys the binding for the specified name */
@@ -299,9 +313,14 @@ public class UDDINaming {
 
     /** Binds the specified name to a URL */
     public void bind(String orgName, String url) throws JAXRException {
+    	UDDIRecord record = new UDDIRecord(orgName, url);
+        bind(record);
+    }
+
+    /** Binds the specified record containing a name and a URL */
+    public void bind(UDDIRecord record) throws JAXRException {
         autoConnect();
         try {
-        	UDDIRecord record = new UDDIRecord(orgName, url);
             publish(record);
 
         } finally {
@@ -311,10 +330,15 @@ public class UDDINaming {
 
     /** Rebinds the specified name to a new URL */
     public void rebind(String orgName, String url) throws JAXRException {
+    	UDDIRecord record = new UDDIRecord(orgName, url);
+    	rebind(record);
+    }
+    
+    /** Rebinds the specified name to a new URL */
+    public void rebind(UDDIRecord record) throws JAXRException {
         autoConnect();
         try {
-            deleteAll(orgName);
-        	UDDIRecord record = new UDDIRecord(orgName, url);
+            deleteAll(record.getOrgName());
             publish(record);
 
         } finally {
@@ -402,24 +426,22 @@ public class UDDINaming {
         namePatterns.add(orgName);
 
         // Search existing
-        BulkResponse response = bqm.findOrganizations(findQualifiers,
-                namePatterns, null, null, null, null);
+        BulkResponse response = bqm.findOrganizations(findQualifiers, namePatterns, 
+        	null, null, null, null);
         @SuppressWarnings("unchecked")
         Collection<Organization> orgs = response.getCollection();
         Collection<Key> orgsToDelete = new ArrayList<Key>();
 
         for (Organization org : orgs)
-            if (org.getName().getValue().equals(orgName))
-                orgsToDelete.add(org.getKey());
+            orgsToDelete.add(org.getKey());
+
+        if (debugFlag)
+            System.out.printf("%d organizations to delete%n", orgsToDelete.size());
 
         // delete previous registrations
         if (orgsToDelete.isEmpty()) {
             return true;
         } else {
-            if (debugFlag)
-                System.out.printf("%d organizations to delete%n",
-                        orgsToDelete.size());
-
             BulkResponse deleteResponse = blcm
                     .deleteOrganizations(orgsToDelete);
             boolean result = (deleteResponse.getStatus() == JAXRResponse.STATUS_SUCCESS);
@@ -439,7 +461,7 @@ public class UDDINaming {
 
     private boolean publish(UDDIRecord record) throws JAXRException {
         // derive other names from organization name
-        String serviceName = record.getOrganization() + " service";
+        String serviceName = record.getOrgName() + " service";
         String bindingDesc = serviceName + " binding";
 
         if (debugFlag) {
@@ -447,7 +469,7 @@ public class UDDINaming {
             System.out.printf("Derived binding description %s%n", bindingDesc);
         }
 
-        return publish(record.getOrganization(), serviceName, bindingDesc, record.getUrl());
+        return publish(record.getOrgName(), serviceName, bindingDesc, record.getUrl());
     }
 
     private boolean publish(String orgName, String serviceName,
