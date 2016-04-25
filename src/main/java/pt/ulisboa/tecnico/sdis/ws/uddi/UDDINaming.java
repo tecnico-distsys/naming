@@ -145,16 +145,17 @@ public class UDDINaming {
 		this.password = password;
 	}
 
-	/** get print debug option value */
-	public boolean isPrintDebug() {
+	/** get print debug messages option value */
+	boolean isPrintDebug() {
 		return debugFlag;
 	}
 
-	/** print information messages? */
-	public void setPrintDebug(boolean infoFlag) {
-		this.debugFlag = infoFlag;
+	/** print debug messages? */
+	void setPrintDebug(boolean debugFlag) {
+		this.debugFlag = debugFlag;
 	}
 
+	
 	/**
 	 * Main method expects two arguments: - UDDI server URL - Organization name
 	 *
@@ -184,8 +185,8 @@ public class UDDINaming {
 				System.out.println(url);
 
 		} catch (JAXRException e) {
-			System.err.println("Caught JAX-R exception!");
-			e.printStackTrace(System.err);
+			System.err.print("Caught JAX-R exception! ");
+			System.err.println(e);
 		}
 	}
 
@@ -333,7 +334,7 @@ public class UDDINaming {
 		rebind(record);
 	}
 
-	/** Rebinds the specified name to a new URL */
+	/** Rebinds the specified record containing a name and a new URL */
 	public void rebind(UDDIRecord record) throws JAXRException {
 		autoConnect();
 		try {
