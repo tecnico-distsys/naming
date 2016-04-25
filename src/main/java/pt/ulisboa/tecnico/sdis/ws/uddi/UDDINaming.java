@@ -27,10 +27,13 @@ import javax.xml.registry.infomodel.ServiceBinding;
 /**
  * This class defines simple methods to bind UDDI organizations to URL
  * addresses: list, lookup, unbind, bind, rebind. It is inspired by the
- * java.rmi.Naming class.
- *
+ * java.rmi.Naming class.<br />
+ * <br />
  * To achieve greater control of the underlying registry, the JAX-R API should
- * be used instead.
+ * be used instead.<br />
+ * <br />
+ * 
+ * @author Miguel Pardal
  */
 public class UDDINaming {
 
