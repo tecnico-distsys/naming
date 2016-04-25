@@ -71,17 +71,20 @@ public class UDDINaming {
 	// Constructors
 	//
 
-	/** Create an UDDI client configured to access the specified URL */
-	public UDDINaming(String url) throws JAXRException {
-		this(url, true);
+	/** 
+	 * Create an UDDI client configured to access the specified URL.
+	 * The connection to the server is managed automatically (auto-connect option is enabled).
+	 */
+	public UDDINaming(String uddiURL) throws JAXRException {
+		this(uddiURL, true);
 	}
 
 	/**
 	 * Create an UDDI client configured to access the specified URL and with the
-	 * specified auto-connect option
+	 * specified auto-connect option.
 	 */
-	public UDDINaming(String url, boolean autoConnect) throws JAXRException {
-		if (!url.startsWith("http"))
+	public UDDINaming(String uddiURL, boolean autoConnect) throws JAXRException {
+		if (!uddiURL.startsWith("http"))
 			throw new IllegalArgumentException("Please provide UDDI server URL in http://host:port format!");
 		this.autoConnectFlag = autoConnect;
 
@@ -104,13 +107,13 @@ public class UDDINaming {
 
 		// define system properties used to perform replacements in uddi.xml
 		if (System.getProperty("javax.xml.registry.queryManagerURL") == null)
-			System.setProperty("javax.xml.registry.queryManagerURL", url + "/juddiv3/services/inquiry");
+			System.setProperty("javax.xml.registry.queryManagerURL", uddiURL + "/juddiv3/services/inquiry");
 
 		if (System.getProperty("javax.xml.registry.lifeCycleManagerURL") == null)
-			System.setProperty("javax.xml.registry.lifeCycleManagerURL", url + "/juddiv3/services/publish");
+			System.setProperty("javax.xml.registry.lifeCycleManagerURL", uddiURL + "/juddiv3/services/publish");
 
 		if (System.getProperty("javax.xml.registry.securityManagerURL") == null)
-			System.setProperty("javax.xml.registry.securityManagerURL", url + "/juddiv3/services/security");
+			System.setProperty("javax.xml.registry.securityManagerURL", uddiURL + "/juddiv3/services/security");
 
 		Properties props = new Properties();
 		props.setProperty("scout.juddi.client.config.file", "uddi.xml");
@@ -121,7 +124,7 @@ public class UDDINaming {
 		connFactory.setProperties(props);
 
 		// save URL
-		this.url = url;
+		this.url = uddiURL;
 	}
 
 	//
@@ -149,24 +152,24 @@ public class UDDINaming {
 	}
 
 	/** get print debug messages option value */
-	boolean isPrintDebug() {
+	public boolean isPrintDebug() {
 		return debugFlag;
 	}
 
 	/** print debug messages? */
-	void setPrintDebug(boolean debugFlag) {
+	public void setPrintDebug(boolean debugFlag) {
 		this.debugFlag = debugFlag;
 	}
 
 	
 	/**
-	 * Main method expects two arguments: - UDDI server URL - Organization name
-	 *
-	 * Main performs a lookup on UDDI server using the organization name. If a
-	 * registration is found, the service URL is printed to standard output. If
-	 * not, nothing is printed.
-	 *
-	 * Standard error is used to print error messages.
+	 * Main method expects two arguments: - UDDI server URL - Organization name<br />
+	 * <br />
+	 * Main performs a lookup on UDDI server using the organization name. <br />
+	 * If a registration is found, the service URL is printed to standard output.<br /> 
+	 * If not, nothing is printed.<br />
+	 * <br />
+	 * Standard error is used to print error messages.<br />
 	 */
 	public static void main(String[] args) {
 		// Check arguments
