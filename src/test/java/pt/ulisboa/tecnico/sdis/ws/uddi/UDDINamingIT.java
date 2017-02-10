@@ -16,11 +16,9 @@ import org.junit.Test;
 /**
  * Integration Test suite
  */
-public class UDDINamingIT {
+public class UDDINamingIT extends BaseIT {
 
 	// static members
-	static final String UDDI_URL = "http://localhost:9090";
-
 	static final String TEST_NAME = "TestWebServiceName";
 	static final String TEST_URL = "http://host:port/my-ws/endpoint";
 
@@ -44,7 +42,9 @@ public class UDDINamingIT {
 
 	@Before
 	public void setUp() throws Exception {
-		uddiNaming = new UDDINaming(UDDI_URL);
+		uddiNaming = new UDDINaming(TEST_PROPS.getProperty("uddi.url"));
+		uddiNaming.setUsername(TEST_PROPS.getProperty("uddi.user"));
+		uddiNaming.setPassword(TEST_PROPS.getProperty("uddi.pass").toCharArray());
 	}
 
 	@After
