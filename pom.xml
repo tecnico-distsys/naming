@@ -17,6 +17,7 @@
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
 
+        <!-- these default values can be overriden by a profile defined in ${user.home}/.m2/settings.xml -->
         <uddi.url>http://localhost:9090</uddi.url>
         <uddi.user>username</uddi.user>
         <uddi.pass>password</uddi.pass>
