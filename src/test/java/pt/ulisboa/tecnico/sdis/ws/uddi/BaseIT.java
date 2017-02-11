@@ -10,15 +10,15 @@ import org.junit.BeforeClass;
 public class BaseIT {
 
 	private static final String TEST_PROP_FILE = "/test.properties";
-	protected static Properties TEST_PROPS;
+	protected static Properties testProps;
 
 	@BeforeClass
 	public static void oneTimeSetup() throws IOException {
-		TEST_PROPS = new Properties();
+		testProps = new Properties();
 		try {
-			TEST_PROPS.load(BaseIT.class.getResourceAsStream(TEST_PROP_FILE));
+			testProps.load(BaseIT.class.getResourceAsStream(TEST_PROP_FILE));
 			System.out.println("Loaded test properties:");
-			System.out.println(TEST_PROPS);
+			System.out.println(testProps);
 		} catch (IOException e) {
 			final String msg = String.format(
 					"Could not load properties file {}", TEST_PROP_FILE);
