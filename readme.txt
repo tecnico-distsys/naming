@@ -20,12 +20,12 @@ To generate API documentation:
 To configure the Maven project in Eclipse:
 -----------------------------------------
 
-If Maven pom.xml exist:
+If the Maven pom.xml exists:
     'File', 'Import...', 'Maven'-'Existing Maven Projects'
     'Select root directory' and 'Browse' to the project base folder.
 	Check that the desired POM is selected and 'Finish'.
 
-If Maven pom.xml do not exist:
+If the Maven pom.xml does not exist:
     'File', 'New...', 'Project...', 'Maven Projects'.
 	Check 'Create a simple project (skip architype selection)'.
 	Uncheck  'Use default Workspace location' and 'Browse' to the project base folder.
