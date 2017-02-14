@@ -30,7 +30,7 @@ If Maven pom.xml do not exist:
 	Check 'Create a simple project (skip architype selection)'.
 	Uncheck  'Use default Workspace location' and 'Browse' to the project base folder.
 	Fill the fields in 'New Maven Project'.
-	the Check if everything is OK and 'Finish'.
+	Check if everything is OK and 'Finish'.
 
 
 --
