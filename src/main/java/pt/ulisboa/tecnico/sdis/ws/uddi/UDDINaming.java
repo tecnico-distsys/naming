@@ -1,6 +1,8 @@
 package pt.ulisboa.tecnico.sdis.ws.uddi;
 
+import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -52,8 +54,13 @@ public class UDDINaming {
 
 	/** UDDI user name */
 	private String username = "username";
+	/** Has user name been set? */
+	private boolean usernameFlag = false;
+	
 	/** UDDI user password */
 	private char[] password = "password".toCharArray();
+	/** Has password been set= */
+	private boolean passwordFlag = false;
 
 	/**
 	 * option to establish connection automatically - Should the lookup method
@@ -85,11 +92,31 @@ public class UDDINaming {
 	 * specified auto-connect option.
 	 */
 	public UDDINaming(String uddiURL, boolean autoConnect) throws JAXRException {
-		// UDDI URL validation
+		// UDDI URL string validation
 		uddiURL = validateAndTrimStringArg(uddiURL, "UDDI URL");
 		if (!uddiURL.startsWith("http"))
 			throw new IllegalArgumentException("Please provide UDDI server URL in http://host:port format!");
-
+		// UDDI URL validation
+		URL url = null;
+		try {
+			url = new URL(uddiURL);
+		} catch(MalformedURLException mue) {
+			throw new IllegalArgumentException("Please provide a well-formed URL for the UDDI server", mue);
+		}
+		// check if URL contains user name and password
+		// http://username:password@host:port
+		String userInfo = url.getUserInfo();
+		if (userInfo != null) {
+			String[] userInfoArray = userInfo.split(":");
+			if (userInfoArray.length >= 1)
+				setUsername(userInfoArray[0]);
+			if (userInfoArray.length >= 2)
+				setPassword(userInfoArray[1].toCharArray());
+			// remove user info from URL
+			int indexOfUserInfo = uddiURL.indexOf(userInfo);
+			uddiURL = uddiURL.substring(0, indexOfUserInfo) + uddiURL.substring(indexOfUserInfo + userInfo.length() + 1, uddiURL.length());
+		}
+		
 		this.autoConnectFlag = autoConnect;
 
 		try {
@@ -148,6 +175,12 @@ public class UDDINaming {
 	public void setUsername(String username) {
 		username = validateAndTrimStringArg(username, "User name");
 		this.username = username;
+		this.usernameFlag = true;
+	}
+	
+	/** Check if user name has been set */
+	public boolean isUsernameSet() {
+		return this.usernameFlag;
 	}
 
 	/** Set password */
@@ -155,8 +188,15 @@ public class UDDINaming {
 		if (password == null)
 			throw new IllegalArgumentException("Password cannot be null!");
 		this.password = password;
+		this.passwordFlag = true;
 	}
 
+	/** Check if password has been set */
+	public boolean isPasswordSet() {
+		return this.passwordFlag;
+	}
+
+	
 	/** get print debug messages option value */
 	public boolean isPrintDebug() {
 		return debugFlag;

@@ -43,8 +43,11 @@ public class UDDINamingIT extends BaseIT {
 	@Before
 	public void setUp() throws Exception {
 		uddiNaming = new UDDINaming(testProps.getProperty("uddi.url"));
-		uddiNaming.setUsername(testProps.getProperty("uddi.user"));
-		uddiNaming.setPassword(testProps.getProperty("uddi.pass").toCharArray());
+		// set user name and password only if they have not been set by the URL 
+		if (!uddiNaming.isUsernameSet())
+			uddiNaming.setUsername(testProps.getProperty("uddi.user"));
+		if (!uddiNaming.isPasswordSet())
+			uddiNaming.setPassword(testProps.getProperty("uddi.pass").toCharArray());
 	}
 
 	@After
