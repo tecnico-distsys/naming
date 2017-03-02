@@ -56,7 +56,7 @@ public class UDDINaming {
 	private String username = "username";
 	/** Has user name been set? */
 	private boolean usernameFlag = false;
-	
+
 	/** UDDI user password */
 	private char[] password = "password".toCharArray();
 	/** Has password been set= */
@@ -92,6 +92,10 @@ public class UDDINaming {
 	 * specified auto-connect option.
 	 */
 	public UDDINaming(String uddiURL, boolean autoConnect) throws JAXRException {
+		// debug output
+		if (debugFlag)
+			System.out.println("UDDI URL: " + uddiURL);
+
 		// UDDI URL string validation
 		uddiURL = validateAndTrimStringArg(uddiURL, "UDDI URL");
 		if (!uddiURL.startsWith("http"))
@@ -100,7 +104,7 @@ public class UDDINaming {
 		URL url = null;
 		try {
 			url = new URL(uddiURL);
-		} catch(MalformedURLException mue) {
+		} catch (MalformedURLException mue) {
 			throw new IllegalArgumentException("Please provide a well-formed URL for the UDDI server", mue);
 		}
 		// check if URL contains user name and password
@@ -114,9 +118,10 @@ public class UDDINaming {
 				setPassword(userInfoArray[1].toCharArray());
 			// remove user info from URL
 			int indexOfUserInfo = uddiURL.indexOf(userInfo);
-			uddiURL = uddiURL.substring(0, indexOfUserInfo) + uddiURL.substring(indexOfUserInfo + userInfo.length() + 1, uddiURL.length());
+			uddiURL = uddiURL.substring(0, indexOfUserInfo)
+					+ uddiURL.substring(indexOfUserInfo + userInfo.length() + 1, uddiURL.length());
 		}
-		
+
 		this.autoConnectFlag = autoConnect;
 
 		try {
@@ -177,7 +182,7 @@ public class UDDINaming {
 		this.username = username;
 		this.usernameFlag = true;
 	}
-	
+
 	/** Check if user name has been set */
 	public boolean isUsernameSet() {
 		return this.usernameFlag;
@@ -196,7 +201,6 @@ public class UDDINaming {
 		return this.passwordFlag;
 	}
 
-	
 	/** get print debug messages option value */
 	public boolean isPrintDebug() {
 		return debugFlag;
@@ -247,31 +251,42 @@ public class UDDINaming {
 	// Connection management
 	//
 
-	/** Connect to UDDI server */
-	public void connect() throws JAXRException {
-		conn = connFactory.createConnection();
+	/**
+	 * Connect to UDDI server
+	 * 
+	 * @throws UDDINamingException
+	 */
+	public void connect() throws UDDINamingException {
+		try {
+			conn = connFactory.createConnection();
 
-		// Define credentials
-		PasswordAuthentication passwdAuth = new PasswordAuthentication(username, password);
-		Set<PasswordAuthentication> creds = new HashSet<PasswordAuthentication>();
-		creds.add(passwdAuth);
-		conn.setCredentials(creds);
+			// Define credentials
+			PasswordAuthentication passwdAuth = new PasswordAuthentication(username, password);
+			Set<PasswordAuthentication> creds = new HashSet<PasswordAuthentication>();
+			creds.add(passwdAuth);
+			conn.setCredentials(creds);
 
-		// Get RegistryService object
-		RegistryService rs = conn.getRegistryService();
+			// Get RegistryService object
+			RegistryService rs = conn.getRegistryService();
 
-		// Get QueryManager object (for inquiries)
-		bqm = rs.getBusinessQueryManager();
+			// Get QueryManager object (for inquiries)
+			bqm = rs.getBusinessQueryManager();
 
-		// get BusinessLifeCycleManager object (for updates)
-		blcm = rs.getBusinessLifeCycleManager();
+			// get BusinessLifeCycleManager object (for updates)
+			blcm = rs.getBusinessLifeCycleManager();
+
+		} catch (JAXRException jaxre) {
+			throwUDDINamingException(jaxre, "connect");
+		}
 	}
 
 	/** Disconnect from UDDI server */
-	public void disconnect() throws JAXRException {
+	public void disconnect() throws UDDINamingException {
 		try {
 			if (conn != null)
 				conn.close();
+		} catch (JAXRException jaxre) {
+			throwUDDINamingException(jaxre, "disconnect");
 		} finally {
 			conn = null;
 			bqm = null;
@@ -304,31 +319,70 @@ public class UDDINaming {
 			disconnectQuietly();
 	}
 
+	/** helper method to retrieve root cause of error */
+	// credits: http://stackoverflow.com/a/28565320/129497
+	private Throwable getRootCause(Throwable e) {
+		Throwable cause = null;
+		Throwable result = e;
+
+		while (null != (cause = result.getCause()) && (result != cause)) {
+			result = cause;
+		}
+		return result;
+	}
+
+	/**
+	 * helper method to provide consistent wrapping for JAXRException with
+	 * UDDINamingException
+	 */
+	private void throwUDDINamingException(JAXRException jaxre, String fName) throws UDDINamingException {
+		// debug output
+		if (debugFlag) {
+			System.out.println("Caught " + jaxre + " in " + fName);
+			if (traceFlag)
+				jaxre.printStackTrace(System.out);
+		}
+		// find root cause for meaningful message, but keep exception
+		Throwable rootCause = getRootCause(jaxre);
+		StringBuilder message = new StringBuilder();
+		message.append(fName).append("()");
+		message.append(" failed because of ");
+		message.append(rootCause.getClass().getName()).append(" ").append(rootCause.getMessage());
+		message.append(" that caused ").append(jaxre.getMessage());
+		throw new UDDINamingException(message.toString(), jaxre);
+	}
+
 	//
 	// UDDINaming interface
 	// Outer methods manage connection and call internal operations
+	// Also perform exception wrapping with more meaningful messages
 	//
 
 	/**
 	 * Returns a collection of records bound to the name. The provided name can
 	 * include wild-card characters - % or ? - to match multiple records.
 	 */
-	public Collection<UDDIRecord> listRecords(String orgName) throws JAXRException {
-		orgName = validateAndTrimStringArg(orgName, "Organization name");
-
-		autoConnect();
+	public Collection<UDDIRecord> listRecords(String orgName) throws UDDINamingException {
 		try {
-			return queryAll(orgName);
-		} finally {
-			autoDisconnect();
+			orgName = validateAndTrimStringArg(orgName, "Organization name");
+
+			autoConnect();
+			try {
+				return queryAll(orgName);
+			} finally {
+				autoDisconnect();
+			}
+		} catch (JAXRException jaxre) {
+			throwUDDINamingException(jaxre, "listRecords");
 		}
+		throw new IllegalStateException("UDDINamingException should have been thrown!");
 	}
 
 	/**
 	 * Returns a collection of URLs bound to the name. The provided name can
 	 * include wild-card characters - % or ? - to match multiple records.
 	 */
-	public Collection<String> list(String orgName) throws JAXRException {
+	public Collection<String> list(String orgName) throws UDDINamingException {
 		orgName = validateAndTrimStringArg(orgName, "Organization name");
 
 		Collection<UDDIRecord> records = listRecords(orgName);
@@ -339,85 +393,98 @@ public class UDDINaming {
 	}
 
 	/** Returns the first record associated with the specified name */
-	public UDDIRecord lookupRecord(String orgName) throws JAXRException {
-		orgName = validateAndTrimStringArg(orgName, "Organization name");
-
-		autoConnect();
+	public UDDIRecord lookupRecord(String orgName) throws UDDINamingException {
 		try {
-			return query(orgName);
-		} finally {
-			autoDisconnect();
+			orgName = validateAndTrimStringArg(orgName, "Organization name");
+
+			autoConnect();
+			try {
+				return query(orgName);
+			} finally {
+				autoDisconnect();
+			}
+		} catch (JAXRException jaxre) {
+			throwUDDINamingException(jaxre, "lookupRecord");
 		}
+		throw new IllegalStateException("UDDINamingException should have been thrown!");
 	}
 
 	/** Returns the first URL associated with the specified name */
-	public String lookup(String orgName) throws JAXRException {
+	public String lookup(String orgName) throws UDDINamingException {
 		orgName = validateAndTrimStringArg(orgName, "Organization name");
 
-		try {
-			UDDIRecord record = lookupRecord(orgName);
-			if (record == null)
-				return null;
-			else
-				return record.getUrl();
-		} catch (Exception e) {
-			System.out.println(e);
-			e.printStackTrace();
-			throw new RuntimeException(e);
-		}
+		UDDIRecord record = lookupRecord(orgName);
+		if (record == null)
+			return null;
+		else
+			return record.getUrl();
 	}
 
 	/** Destroys the binding for the specified name */
-	public void unbind(String orgName) throws JAXRException {
-		orgName = validateAndTrimStringArg(orgName, "Organization name");
-
-		autoConnect();
+	public void unbind(String orgName) throws UDDINamingException {
 		try {
-			deleteAll(orgName);
+			orgName = validateAndTrimStringArg(orgName, "Organization name");
 
-		} finally {
-			autoDisconnect();
+			autoConnect();
+			try {
+				deleteAll(orgName);
+
+			} finally {
+				autoDisconnect();
+			}
+
+		} catch (JAXRException jaxre) {
+			throwUDDINamingException(jaxre, "unbind");
 		}
 	}
 
 	/** Binds the specified name to a URL */
-	public void bind(String orgName, String url) throws JAXRException {
+	public void bind(String orgName, String url) throws UDDINamingException {
 		UDDIRecord record = new UDDIRecord(orgName, url);
 		bind(record);
 	}
 
 	/** Binds the specified record containing a name and a URL */
-	public void bind(UDDIRecord record) throws JAXRException {
-		if (record == null)
-			throw new IllegalArgumentException("UDDI Record cannot be null!");
-
-		autoConnect();
+	public void bind(UDDIRecord record) throws UDDINamingException {
 		try {
-			publish(record);
+			if (record == null)
+				throw new IllegalArgumentException("UDDI Record cannot be null!");
 
-		} finally {
-			autoDisconnect();
+			autoConnect();
+			try {
+				publish(record);
+
+			} finally {
+				autoDisconnect();
+			}
+		} catch (JAXRException jaxre) {
+			throwUDDINamingException(jaxre, "bind");
 		}
+
 	}
 
 	/** Rebinds the specified name to a new URL */
-	public void rebind(String orgName, String url) throws JAXRException {
+	public void rebind(String orgName, String url) throws UDDINamingException {
 		UDDIRecord record = new UDDIRecord(orgName, url);
 		rebind(record);
 	}
 
 	/** Rebinds the specified record containing a name and a new URL */
-	public void rebind(UDDIRecord record) throws JAXRException {
-		if (record == null)
-			throw new IllegalArgumentException("UDDI Record cannot be null!");
-
-		autoConnect();
+	public void rebind(UDDIRecord record) throws UDDINamingException {
 		try {
-			deleteAll(record.getOrgName());
-			publish(record);
+			if (record == null)
+				throw new IllegalArgumentException("UDDI Record cannot be null!");
 
-		} finally {
-			autoDisconnect();
+			autoConnect();
+			try {
+				deleteAll(record.getOrgName());
+				publish(record);
+
+			} finally {
+				autoDisconnect();
+			}
+		} catch (JAXRException jaxre) {
+			throwUDDINamingException(jaxre, "rebind");
 		}
 	}
 
@@ -590,6 +657,7 @@ public class UDDINaming {
 
 		boolean result = (response.getStatus() == JAXRResponse.STATUS_SUCCESS);
 
+		// debug output
 		if (debugFlag) {
 			if (result) {
 				System.out.println("UDDI registration completed successfully.");
