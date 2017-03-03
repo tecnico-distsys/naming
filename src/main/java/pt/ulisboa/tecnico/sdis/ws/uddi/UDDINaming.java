@@ -26,6 +26,9 @@ import javax.xml.registry.infomodel.Organization;
 import javax.xml.registry.infomodel.Service;
 import javax.xml.registry.infomodel.ServiceBinding;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 /**
  * This class defines simple methods to bind UDDI organizations to URL
  * addresses: list, lookup, unbind, bind, rebind. It is inspired by the
@@ -68,11 +71,8 @@ public class UDDINaming {
 	 */
 	private boolean autoConnectFlag;
 
-	/** option to print JNDI and JAX-R debug messages */
-	private boolean debugFlag = false;
-
-	/** option to print JNDI and JAX-R trace messages */
-	private boolean traceFlag = false;
+	/** logger object for JNDI and JAX-R debug messages */
+	private Log log = LogFactory.getLog(UDDINaming.class);
 
 	//
 	// Constructors
@@ -92,9 +92,8 @@ public class UDDINaming {
 	 * specified auto-connect option.
 	 */
 	public UDDINaming(String uddiURL, boolean autoConnect) throws JAXRException {
-		// debug output
-		if (debugFlag)
-			System.out.println("UDDI URL: " + uddiURL);
+		if (log.isDebugEnabled())
+			log.debug("UDDI URL: " + uddiURL);
 
 		// UDDI URL string validation
 		uddiURL = validateAndTrimStringArg(uddiURL, "UDDI URL");
@@ -127,12 +126,12 @@ public class UDDINaming {
 		try {
 			InitialContext context = new InitialContext();
 			connFactory = (ConnectionFactory) context.lookup("java:jboss/jaxr/ConnectionFactory");
-		} catch (NamingException e) {
+		} catch (NamingException ne) {
 			// Could not find using JNDI
-			if (debugFlag) {
-				System.out.println("Caught " + e);
-				if (traceFlag)
-					e.printStackTrace(System.out);
+			if (log.isDebugEnabled()) {
+				log.debug("Could not find connection factory using JNDI");
+				if (log.isTraceEnabled())
+					log.trace("Caught exception", ne);
 			}
 			// try factory method from scout implementation
 			System.setProperty("javax.xml.registry.ConnectionFactoryClass",
@@ -199,16 +198,6 @@ public class UDDINaming {
 	/** Check if password has been set */
 	public boolean isPasswordSet() {
 		return this.passwordFlag;
-	}
-
-	/** get print debug messages option value */
-	public boolean isPrintDebug() {
-		return debugFlag;
-	}
-
-	/** print debug messages? */
-	public void setPrintDebug(boolean debugFlag) {
-		this.debugFlag = debugFlag;
 	}
 
 	/**
@@ -336,20 +325,23 @@ public class UDDINaming {
 	 * UDDINamingException
 	 */
 	private void throwUDDINamingException(JAXRException jaxre, String fName) throws UDDINamingException {
-		// debug output
-		if (debugFlag) {
-			System.out.println("Caught " + jaxre + " in " + fName);
-			if (traceFlag)
-				jaxre.printStackTrace(System.out);
+		if (log.isDebugEnabled()) {
+			log.debug(fName + "() caught " + jaxre);
+			if (log.isTraceEnabled())
+				log.trace("Caught exception", jaxre);
 		}
-		// find root cause for meaningful message, but keep caught exception as cause
+		// find root cause for meaningful message, but keep caught exception as
+		// cause
 		Throwable rootCause = getRootCause(jaxre);
 		StringBuilder message = new StringBuilder();
 		message.append(fName).append("()");
 		message.append(" ");
 		message.append(rootCause.getClass().getSimpleName()).append(" ").append(rootCause.getMessage());
 		message.append(" ; ").append(jaxre.getMessage());
-		throw new UDDINamingException(message.toString(), jaxre);
+		UDDINamingException une = new UDDINamingException(message.toString(), jaxre);
+		if (log.isDebugEnabled())
+			log.debug(fName + "() throwing " + une);
+		throw une;
 	}
 
 	//
@@ -518,21 +510,21 @@ public class UDDINaming {
 		BulkResponse r = bqm.findOrganizations(findQualifiers, namePatterns, null, null, null, null);
 		@SuppressWarnings("unchecked")
 		Collection<Organization> orgs = r.getCollection();
-		if (debugFlag)
-			System.out.printf("Found %d organizations%n", orgs.size());
+		if (log.isDebugEnabled())
+			log.debug(String.format("Found %d organizations", orgs.size()));
 
 		for (Organization o : orgs) {
 
 			@SuppressWarnings("unchecked")
 			Collection<Service> services = o.getServices();
-			if (debugFlag)
-				System.out.printf("Found %d services%n", services.size());
+			if (log.isDebugEnabled())
+				log.debug(String.format("Found %d services", services.size()));
 
 			for (Service s : services) {
 				@SuppressWarnings("unchecked")
 				Collection<ServiceBinding> serviceBindinds = (Collection<ServiceBinding>) s.getServiceBindings();
-				if (debugFlag)
-					System.out.printf("Found %d service bindings%n", serviceBindinds.size());
+				if (log.isDebugEnabled())
+					log.debug(String.format("Found %d service bindings", serviceBindinds.size()));
 
 				for (ServiceBinding sb : serviceBindinds) {
 					String org = o.getName().getValue();
@@ -544,8 +536,8 @@ public class UDDINaming {
 		}
 
 		// service binding not found
-		if (debugFlag)
-			System.out.printf("Returning list with size %d%n", records.size());
+		if (log.isDebugEnabled())
+			log.debug(String.format("Returning list with size %d", records.size()));
 		return records;
 	}
 
@@ -556,13 +548,13 @@ public class UDDINaming {
 
 		if (listResultSize == 0) {
 			// service binding not found
-			if (debugFlag)
-				System.out.println("Service binding not found; Returning null");
+			if (log.isDebugEnabled())
+				log.debug("Service binding not found; Returning null");
 			return null;
 		} else {
 			if (listResultSize > 1)
-				if (debugFlag)
-					System.out.printf("Returning first service binding of %d found%n", listResultSize);
+				if (log.isDebugEnabled())
+					log.debug(String.format("Returning first service binding of %d found", listResultSize));
 			return listResult.iterator().next();
 		}
 	}
@@ -585,8 +577,8 @@ public class UDDINaming {
 		for (Organization org : orgs)
 			orgsToDelete.add(org.getKey());
 
-		if (debugFlag)
-			System.out.printf("%d organizations to delete%n", orgsToDelete.size());
+		if (log.isDebugEnabled())
+			log.debug(String.format("%d organizations to delete", orgsToDelete.size()));
 
 		// delete previous registrations
 		if (orgsToDelete.isEmpty()) {
@@ -595,11 +587,11 @@ public class UDDINaming {
 			BulkResponse deleteResponse = blcm.deleteOrganizations(orgsToDelete);
 			boolean result = (deleteResponse.getStatus() == JAXRResponse.STATUS_SUCCESS);
 
-			if (debugFlag) {
+			if (log.isDebugEnabled()) {
 				if (result) {
-					System.out.println("UDDI deregistration completed successfully.");
+					log.debug("UDDI deregistration completed successfully.");
 				} else {
-					System.out.println("UDDI error during deregistration.");
+					log.debug("UDDI error during deregistration.");
 				}
 			}
 
@@ -616,9 +608,9 @@ public class UDDINaming {
 		String serviceName = record.getOrgName() + " service";
 		String bindingDesc = serviceName + " binding";
 
-		if (debugFlag) {
-			System.out.printf("Derived service name %s%n", serviceName);
-			System.out.printf("Derived binding description %s%n", bindingDesc);
+		if (log.isDebugEnabled()) {
+			log.debug(String.format("Derived service name %s", serviceName));
+			log.debug(String.format("Derived binding description %s", bindingDesc));
 		}
 
 		return publish(record.getOrgName(), serviceName, bindingDesc, record.getUrl());
@@ -643,7 +635,7 @@ public class UDDINaming {
 		ServiceBinding serviceBinding = blcm.createServiceBinding();
 		serviceBinding.setDescription(blcm.createInternationalString(bindingDescription));
 		serviceBinding.setValidateURI(false);
-		// Define the Web Service endpoint address here
+		// Define the Web Service end point address here
 		serviceBinding.setAccessURI(bindingURL);
 		if (serviceBinding != null) {
 			// Add serviceBinding to service
@@ -657,12 +649,11 @@ public class UDDINaming {
 
 		boolean result = (response.getStatus() == JAXRResponse.STATUS_SUCCESS);
 
-		// debug output
-		if (debugFlag) {
+		if (log.isDebugEnabled()) {
 			if (result) {
-				System.out.println("UDDI registration completed successfully.");
+				log.debug("UDDI registration completed successfully.");
 			} else {
-				System.out.println("UDDI error during registration.");
+				log.debug("UDDI error during registration.");
 			}
 		}
 
