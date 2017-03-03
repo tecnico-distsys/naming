@@ -342,13 +342,13 @@ public class UDDINaming {
 			if (traceFlag)
 				jaxre.printStackTrace(System.out);
 		}
-		// find root cause for meaningful message, but keep exception
+		// find root cause for meaningful message, but keep caught exception as cause
 		Throwable rootCause = getRootCause(jaxre);
 		StringBuilder message = new StringBuilder();
 		message.append(fName).append("()");
-		message.append(" failed because of ");
-		message.append(rootCause.getClass().getName()).append(" ").append(rootCause.getMessage());
-		message.append(" that caused ").append(jaxre.getMessage());
+		message.append(" ");
+		message.append(rootCause.getClass().getSimpleName()).append(" ").append(rootCause.getMessage());
+		message.append(" ; ").append(jaxre.getMessage());
 		throw new UDDINamingException(message.toString(), jaxre);
 	}
 
