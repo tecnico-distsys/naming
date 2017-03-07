@@ -1,14 +1,12 @@
 package pt.ulisboa.tecnico.sdis.ws.uddi;
 
-import javax.xml.registry.JAXRException;
-
 /**
- * Class that represents a UDDI naming exception. This class extends
- * JAXRException and is intended to provide more meaningful exception messages.
+ * Class that represents a UDDI naming exception. This class is intended to
+ * provide more meaningful exception messages.
  * 
  * @author Miguel Pardal
  */
-public class UDDINamingException extends JAXRException {
+public class UDDINamingException extends Exception {
 
 	private static final long serialVersionUID = 1L;
 

@@ -121,8 +121,18 @@ public class UDDINaming {
 					+ uddiURL.substring(indexOfUserInfo + userInfo.length() + 1, uddiURL.length());
 		}
 
+		// save URL
+		this.url = uddiURL;
+
+		// save auto-connect option
 		this.autoConnectFlag = autoConnect;
 
+		// initialize connection factory
+		initConnectionFactory();
+	}
+
+	/** Perform the initialization of the JAX-R connection factory */
+	private void initConnectionFactory() throws JAXRException {
 		try {
 			InitialContext context = new InitialContext();
 			connFactory = (ConnectionFactory) context.lookup("java:jboss/jaxr/ConnectionFactory");
@@ -137,17 +147,19 @@ public class UDDINaming {
 			System.setProperty("javax.xml.registry.ConnectionFactoryClass",
 					"org.apache.ws.scout.registry.ConnectionFactoryImpl");
 			connFactory = ConnectionFactory.newInstance();
+			log.debug("Created connection factory from scout implementation");
 		}
 
 		// define system properties used to perform replacements in uddi.xml
+		log.trace("Define system properties for replacements in uddi.xml");
 		if (System.getProperty("javax.xml.registry.queryManagerURL") == null)
-			System.setProperty("javax.xml.registry.queryManagerURL", uddiURL + "/juddiv3/services/inquiry");
+			System.setProperty("javax.xml.registry.queryManagerURL", url + "/juddiv3/services/inquiry");
 
 		if (System.getProperty("javax.xml.registry.lifeCycleManagerURL") == null)
-			System.setProperty("javax.xml.registry.lifeCycleManagerURL", uddiURL + "/juddiv3/services/publish");
+			System.setProperty("javax.xml.registry.lifeCycleManagerURL", url + "/juddiv3/services/publish");
 
 		if (System.getProperty("javax.xml.registry.securityManagerURL") == null)
-			System.setProperty("javax.xml.registry.securityManagerURL", uddiURL + "/juddiv3/services/security");
+			System.setProperty("javax.xml.registry.securityManagerURL", url + "/juddiv3/services/security");
 
 		Properties props = new Properties();
 		props.setProperty("scout.juddi.client.config.file", "uddi.xml");
@@ -156,11 +168,11 @@ public class UDDINaming {
 		props.setProperty("scout.proxy.uddiVersion", "3.0");
 		props.setProperty("scout.proxy.transportClass", "org.apache.juddi.v3.client.transport.JAXWSTransport");
 		connFactory.setProperties(props);
-
-		// save URL
-		this.url = uddiURL;
+		log.debug("Set connection factory properties");
+		log.trace(props);
 	}
 
+	
 	//
 	// Accessors
 	//
@@ -200,41 +212,6 @@ public class UDDINaming {
 		return this.passwordFlag;
 	}
 
-	/**
-	 * Main method expects two arguments: - UDDI server URL - Organization name
-	 * <br />
-	 * <br />
-	 * Main performs a lookup on UDDI server using the organization name. <br />
-	 * If a registration is found, the service URL is printed to standard
-	 * output.<br />
-	 * If not, nothing is printed.<br />
-	 * <br />
-	 * Standard error is used to print error messages.<br />
-	 */
-	public static void main(String[] args) {
-		// Check arguments
-		if (args.length < 2) {
-			System.err.println("Argument(s) missing!");
-			System.err.printf("Usage: java %s uddiURL orgName%n", UDDINaming.class.getName());
-			return;
-		}
-
-		String uddiURL = args[0];
-		String orgName = args[1];
-
-		UDDINaming instance;
-		try {
-			instance = new UDDINaming(uddiURL);
-			String url = instance.lookup(orgName);
-
-			if (url != null)
-				System.out.println(url);
-
-		} catch (JAXRException e) {
-			System.err.print("Caught JAX-R exception! ");
-			System.err.println(e);
-		}
-	}
 
 	//
 	// Connection management
@@ -264,8 +241,8 @@ public class UDDINaming {
 			// get BusinessLifeCycleManager object (for updates)
 			blcm = rs.getBusinessLifeCycleManager();
 
-		} catch (JAXRException jaxre) {
-			throwUDDINamingException(jaxre, "connect");
+		} catch (Exception e) {
+			throwUDDINamingException(e, "connect");
 		}
 	}
 
@@ -274,8 +251,8 @@ public class UDDINaming {
 		try {
 			if (conn != null)
 				conn.close();
-		} catch (JAXRException jaxre) {
-			throwUDDINamingException(jaxre, "disconnect");
+		} catch (Exception e) {
+			throwUDDINamingException(e, "disconnect");
 		} finally {
 			conn = null;
 			bqm = null;
@@ -288,13 +265,13 @@ public class UDDINaming {
 		try {
 			disconnect();
 
-		} catch (JAXRException e) {
+		} catch (Exception e) {
 			// ignore
 		}
 	}
 
 	/** helper method to automatically connect to registry */
-	private void autoConnect() throws JAXRException {
+	private void autoConnect() throws UDDINamingException {
 		if (conn == null)
 			if (autoConnectFlag)
 				connect();
@@ -303,14 +280,14 @@ public class UDDINaming {
 	}
 
 	/** helper method to automatically disconnect from registry */
-	private void autoDisconnect() throws JAXRException {
+	private void autoDisconnect() {
 		if (autoConnectFlag)
 			disconnectQuietly();
 	}
 
 	/** helper method to retrieve root cause of error */
 	// credits: http://stackoverflow.com/a/28565320/129497
-	private Throwable getRootCause(Throwable e) {
+	static Throwable getRootCause(Throwable e) {
 		Throwable cause = null;
 		Throwable result = e;
 
@@ -324,21 +301,21 @@ public class UDDINaming {
 	 * helper method to provide consistent wrapping for JAXRException with
 	 * UDDINamingException
 	 */
-	private void throwUDDINamingException(JAXRException jaxre, String fName) throws UDDINamingException {
+	private void throwUDDINamingException(Exception e, String fName) throws UDDINamingException {
 		if (log.isDebugEnabled()) {
-			log.debug(fName + "() caught " + jaxre);
+			log.debug(fName + "() caught " + e);
 			if (log.isTraceEnabled())
-				log.trace("Caught exception", jaxre);
+				log.trace("Caught exception", e);
 		}
-		// find root cause for meaningful message, but keep caught exception as
-		// cause
-		Throwable rootCause = getRootCause(jaxre);
-		StringBuilder message = new StringBuilder();
-		message.append(fName).append("()");
-		message.append(" ");
-		message.append(rootCause.getClass().getSimpleName()).append(" ").append(rootCause.getMessage());
-		message.append(" ; ").append(jaxre.getMessage());
-		UDDINamingException une = new UDDINamingException(message.toString(), jaxre);
+		// find root cause to provide more meaningful message, but keep caught exception as
+		// cause so that no error information is lost
+		Throwable rootCause = getRootCause(e);
+		StringBuilder sb = new StringBuilder();
+		sb.append(fName).append("()");
+		sb.append(" ");
+		sb.append(rootCause.getClass().getSimpleName()).append(" ").append(rootCause.getMessage());
+		sb.append(" ; ").append(e.getMessage());
+		UDDINamingException une = new UDDINamingException(sb.toString(), e);
 		if (log.isDebugEnabled())
 			log.debug(fName + "() throwing " + une);
 		throw une;
@@ -364,8 +341,8 @@ public class UDDINaming {
 			} finally {
 				autoDisconnect();
 			}
-		} catch (JAXRException jaxre) {
-			throwUDDINamingException(jaxre, "listRecords");
+		} catch (Exception e) {
+			throwUDDINamingException(e, "listRecords");
 		}
 		throw new IllegalStateException("UDDINamingException should have been thrown!");
 	}
@@ -395,8 +372,8 @@ public class UDDINaming {
 			} finally {
 				autoDisconnect();
 			}
-		} catch (JAXRException jaxre) {
-			throwUDDINamingException(jaxre, "lookupRecord");
+		} catch (Exception e) {
+			throwUDDINamingException(e, "lookupRecord");
 		}
 		throw new IllegalStateException("UDDINamingException should have been thrown!");
 	}
@@ -424,9 +401,8 @@ public class UDDINaming {
 			} finally {
 				autoDisconnect();
 			}
-
-		} catch (JAXRException jaxre) {
-			throwUDDINamingException(jaxre, "unbind");
+		} catch (Exception e) {
+			throwUDDINamingException(e, "unbind");
 		}
 	}
 
@@ -449,8 +425,8 @@ public class UDDINaming {
 			} finally {
 				autoDisconnect();
 			}
-		} catch (JAXRException jaxre) {
-			throwUDDINamingException(jaxre, "bind");
+		} catch (Exception e) {
+			throwUDDINamingException(e, "bind");
 		}
 
 	}
@@ -475,8 +451,8 @@ public class UDDINaming {
 			} finally {
 				autoDisconnect();
 			}
-		} catch (JAXRException jaxre) {
-			throwUDDINamingException(jaxre, "rebind");
+		} catch (Exception e) {
+			throwUDDINamingException(e, "rebind");
 		}
 	}
 
