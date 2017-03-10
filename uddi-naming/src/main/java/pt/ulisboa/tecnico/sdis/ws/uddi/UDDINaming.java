@@ -12,6 +12,7 @@ import java.util.Set;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import javax.naming.NoInitialContextException;
 import javax.xml.registry.BulkResponse;
 import javax.xml.registry.BusinessLifeCycleManager;
 import javax.xml.registry.BusinessQueryManager;
@@ -401,6 +402,37 @@ public class UDDINaming {
 			} finally {
 				autoDisconnect();
 			}
+
+		} catch (RuntimeException rte) {
+			if (log.isTraceEnabled()) {
+				log.trace(rte.getClass().getName());
+				log.trace(rte.getMessage());
+			}
+			// Check message for authentication token expiration.
+			// Unfortunately there is not a specific exception type for this case.
+			Throwable rootCause = getRootCause(rte);
+			if (log.isTraceEnabled()) {
+				log.trace(rootCause.getClass().getName());
+				log.trace(rootCause.getMessage());
+			}
+			String msg = rootCause.getMessage();
+			if (msg != null && msg.indexOf("The authentication token is expired") >= 0) {
+				// reconnect and try again
+				if (autoConnectFlag) {
+					log.debug("Caught expired token. Connect again and retry.");
+					try {
+						initConnectionFactory();
+					} catch (JAXRException e) {
+						log.debug("Could not initialize factory again!");
+						log.trace(e);
+					}
+					connect();
+					unbind(orgName);
+				}
+			} else {
+				throwUDDINamingException(rte, "unbind");
+			}
+
 		} catch (Exception e) {
 			throwUDDINamingException(e, "unbind");
 		}
