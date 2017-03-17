@@ -11,26 +11,28 @@ public class UDDINamingApp {
 
 	/**
 	 * Main method expects three to four arguments: - 1 UDDI server URL - 2
-	 * Command - 3 Organization name - 4 Service URL <br />
-	 * <br />
+	 * Command - 3 Organization name - 4 Service URL <br>
+	 * <br>
 	 * For command lookup, main performs a lookup on UDDI server using the
-	 * organization name. <br />
+	 * organization name. <br>
 	 * If a registration is found, the service URL is printed to standard
-	 * output.<br />
-	 * If not, nothing is printed.<br />
-	 * <br />
+	 * output.<br>
+	 * If not, nothing is printed.<br>
+	 * <br>
 	 * For command list, main performs a list on UDDI server using the
-	 * organization name. <br />
+	 * organization name. <br>
 	 * If registrations are found, the service URLs are printed to standard
-	 * output.<br />
-	 * If not, nothing is printed.<br />
-	 * <br />
+	 * output.<br>
+	 * If not, nothing is printed.<br>
+	 * <br>
 	 * For command bind/unbind/rebind, main performs a
-	 * registration/deletion/deletion followed by registration. <br />
-	 * If the command is successful, nothing is printed to standard
-	 * output.<br />
-	 * <br />
-	 * Standard error is used to print error messages.<br />
+	 * registration/deletion/deletion followed by registration. <br>
+	 * If the command is successful, nothing is printed to standard output.<br>
+	 * <br>
+	 * Standard error is used to print error messages.<br>
+	 * 
+	 * @param args
+	 *            Command line arguments
 	 */
 	public static void main(String[] args) {
 		// Check arguments
@@ -102,6 +104,5 @@ public class UDDINamingApp {
 			System.err.println(sb.toString());
 		}
 	}
-
 
 }

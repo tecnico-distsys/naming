@@ -32,11 +32,11 @@ import org.apache.commons.logging.LogFactory;
 /**
  * This class defines simple methods to bind UDDI organizations to URL
  * addresses: list, lookup, unbind, bind, rebind. It is inspired by the
- * java.rmi.Naming class.<br />
- * <br />
+ * java.rmi.Naming class.<br>
+ * <br>
  * To achieve greater control of the underlying registry, the JAX-R API should
- * be used instead.<br />
- * <br />
+ * be used instead.<br>
+ * <br>
  * 
  * @author Miguel Pardal
  */
@@ -66,12 +66,12 @@ public class UDDINaming {
 	private boolean passwordFlag = false;
 
 	/**
-	 * option to establish connection automatically - Should the lookup method
-	 * connect automatically? true - yes, false - no
+	 * Option to establish connection automatically - Should the lookup method
+	 * connect automatically? true - yes, false - no.
 	 */
 	private boolean autoConnectFlag;
 
-	/** logger object for JNDI and JAX-R debug messages */
+	/** Logger object for JNDI and JAX-R debug messages. */
 	private Log log = LogFactory.getLog(UDDINaming.class);
 
 	//
@@ -79,59 +79,76 @@ public class UDDINaming {
 	//
 
 	/**
-	 * Create an UDDI client configured to access the specified URL. The
+	 * Creates an UDDI client configured to access the specified URL. The
 	 * connection to the server is managed automatically (auto-connect option is
 	 * enabled).
+	 * 
+	 * @param uddiURL
+	 *            URL of UDDI server to use
+	 * @throws UDDINamingException
+	 *             if constructor fails
 	 */
-	public UDDINaming(String uddiURL) throws JAXRException {
+	public UDDINaming(String uddiURL) throws UDDINamingException {
 		this(uddiURL, true);
 	}
 
 	/**
-	 * Create an UDDI client configured to access the specified URL and with the
+	 * Creates an UDDI client configured to access the specified URL and with the
 	 * specified auto-connect option.
+	 * 
+	 * @param uddiURL
+	 *            URL of UDDI server to use
+	 * @param autoConnect
+	 *            option to connect automatically to UDDI server when an action
+	 *            is requested
+	 * @throws UDDINamingException
+	 *             if constructor fails
 	 */
-	public UDDINaming(String uddiURL, boolean autoConnect) throws JAXRException {
-		if (log.isDebugEnabled())
-			log.debug("UDDI URL: " + uddiURL);
-
-		// UDDI URL string validation
-		uddiURL = validateAndTrimStringArg(uddiURL, "UDDI URL");
-		if (!uddiURL.startsWith("http"))
-			throw new IllegalArgumentException("Please provide UDDI server URL in http://host:port format!");
-		// UDDI URL validation
-		URL url = null;
+	public UDDINaming(String uddiURL, boolean autoConnect) throws UDDINamingException {
 		try {
-			url = new URL(uddiURL);
-		} catch (MalformedURLException mue) {
-			throw new IllegalArgumentException("Please provide a well-formed URL for the UDDI server", mue);
+			if (log.isDebugEnabled())
+				log.debug("UDDI URL: " + uddiURL);
+
+			// UDDI URL string validation
+			uddiURL = validateAndTrimStringArg(uddiURL, "UDDI URL");
+			if (!uddiURL.startsWith("http"))
+				throw new IllegalArgumentException("Please provide UDDI server URL in http://host:port format!");
+			// UDDI URL validation
+			URL url = null;
+			try {
+				url = new URL(uddiURL);
+			} catch (MalformedURLException mue) {
+				throw new IllegalArgumentException("Please provide a well-formed URL for the UDDI server", mue);
+			}
+			// check if URL contains user name and password
+			// http://username:password@host:port
+			String userInfo = url.getUserInfo();
+			if (userInfo != null) {
+				String[] userInfoArray = userInfo.split(":");
+				if (userInfoArray.length >= 1)
+					setUsername(userInfoArray[0]);
+				if (userInfoArray.length >= 2)
+					setPassword(userInfoArray[1].toCharArray());
+				// remove user info from URL
+				int indexOfUserInfo = uddiURL.indexOf(userInfo);
+				uddiURL = uddiURL.substring(0, indexOfUserInfo)
+						+ uddiURL.substring(indexOfUserInfo + userInfo.length() + 1, uddiURL.length());
+			}
+
+			// save URL
+			this.url = uddiURL;
+
+			// save auto-connect option
+			this.autoConnectFlag = autoConnect;
+
+			// initialize connection factory
+			initConnectionFactory();
+		} catch (Exception e) {
+			throwUDDINamingException(e, "constructor UDDINaming");
 		}
-		// check if URL contains user name and password
-		// http://username:password@host:port
-		String userInfo = url.getUserInfo();
-		if (userInfo != null) {
-			String[] userInfoArray = userInfo.split(":");
-			if (userInfoArray.length >= 1)
-				setUsername(userInfoArray[0]);
-			if (userInfoArray.length >= 2)
-				setPassword(userInfoArray[1].toCharArray());
-			// remove user info from URL
-			int indexOfUserInfo = uddiURL.indexOf(userInfo);
-			uddiURL = uddiURL.substring(0, indexOfUserInfo)
-					+ uddiURL.substring(indexOfUserInfo + userInfo.length() + 1, uddiURL.length());
-		}
-
-		// save URL
-		this.url = uddiURL;
-
-		// save auto-connect option
-		this.autoConnectFlag = autoConnect;
-
-		// initialize connection factory
-		initConnectionFactory();
 	}
 
-	/** Perform the initialization of the JAX-R connection factory */
+	/** Performs the initialization of the JAX-R connection factory. */
 	private void initConnectionFactory() throws JAXRException {
 		try {
 			InitialContext context = new InitialContext();
@@ -172,34 +189,55 @@ public class UDDINaming {
 		log.trace(props);
 	}
 
-	
 	//
 	// Accessors
 	//
 
-	/** Return UDDI server address */
+	/**
+	 * Returns UDDI server address.
+	 * 
+	 * @return UDDI URL
+	 */
 	public String getUDDIUrl() {
 		return url;
 	}
 
-	/** Return user name */
+	/**
+	 * Returns user name.
+	 * 
+	 * @return user name
+	 */
 	public String getUsername() {
 		return username;
 	}
 
-	/** Set user name */
+	/**
+	 * Sets user name.
+	 * 
+	 * @param username
+	 *            name of user to set
+	 */
 	public void setUsername(String username) {
 		username = validateAndTrimStringArg(username, "User name");
 		this.username = username;
 		this.usernameFlag = true;
 	}
 
-	/** Check if user name has been set */
+	/**
+	 * Checks if user name has been set since the creation of the object.
+	 *
+	 * @return is user name set?
+	 */
 	public boolean isUsernameSet() {
 		return this.usernameFlag;
 	}
 
-	/** Set password */
+	/**
+	 * Sets password.
+	 * 
+	 * @param password
+	 *            password value in character array
+	 */
 	public void setPassword(char[] password) {
 		if (password == null)
 			throw new IllegalArgumentException("Password cannot be null!");
@@ -207,20 +245,24 @@ public class UDDINaming {
 		this.passwordFlag = true;
 	}
 
-	/** Check if password has been set */
+	/**
+	 * Checks if password has been set since the creation of the object.
+	 * 
+	 * @return is password set?
+	 */
 	public boolean isPasswordSet() {
 		return this.passwordFlag;
 	}
-
 
 	//
 	// Connection management
 	//
 
 	/**
-	 * Connect to UDDI server
+	 * Connects to the UDDI server.
 	 * 
 	 * @throws UDDINamingException
+	 *             if there is a problem during connection
 	 */
 	public void connect() throws UDDINamingException {
 		try {
@@ -246,7 +288,12 @@ public class UDDINaming {
 		}
 	}
 
-	/** Disconnect from UDDI server */
+	/**
+	 * Disconnects from the UDDI server.
+	 * 
+	 * @throws UDDINamingException
+	 *             if there is a problem during disconnection
+	 */
 	public void disconnect() throws UDDINamingException {
 		try {
 			if (conn != null)
@@ -260,7 +307,9 @@ public class UDDINaming {
 		}
 	}
 
-	/** Disconnect from UDDI server, ignoring JAX-R exceptions */
+	/**
+	 * Disconnects from the UDDI server, ignoring exceptions.
+	 */
 	public void disconnectQuietly() {
 		try {
 			disconnect();
@@ -270,7 +319,7 @@ public class UDDINaming {
 		}
 	}
 
-	/** helper method to automatically connect to registry */
+	/** Helper method to automatically connect to registry. */
 	private void autoConnect() throws UDDINamingException {
 		if (conn == null)
 			if (autoConnectFlag)
@@ -279,13 +328,13 @@ public class UDDINaming {
 				throw new IllegalStateException("Not connected! Cannot perform operation!");
 	}
 
-	/** helper method to automatically disconnect from registry */
+	/** Helper method to automatically disconnect from registry. */
 	private void autoDisconnect() {
 		if (autoConnectFlag)
 			disconnectQuietly();
 	}
 
-	/** helper method to retrieve root cause of error */
+	/** Helper method to retrieve root cause of error. */
 	// credits: http://stackoverflow.com/a/28565320/129497
 	static Throwable getRootCause(Throwable e) {
 		Throwable cause = null;
@@ -298,8 +347,8 @@ public class UDDINaming {
 	}
 
 	/**
-	 * helper method to provide consistent wrapping for JAXRException with
-	 * UDDINamingException
+	 * Helper method to provide consistent wrapping for JAXRException with
+	 * UDDINamingException.
 	 */
 	private void throwUDDINamingException(Exception e, String fName) throws UDDINamingException {
 		if (log.isDebugEnabled()) {
@@ -307,7 +356,8 @@ public class UDDINaming {
 			if (log.isTraceEnabled())
 				log.trace("Caught exception", e);
 		}
-		// find root cause to provide more meaningful message, but keep caught exception as
+		// find root cause to provide more meaningful message, but keep caught
+		// exception as
 		// cause so that no error information is lost
 		Throwable rootCause = getRootCause(e);
 		StringBuilder sb = new StringBuilder();
@@ -330,6 +380,12 @@ public class UDDINaming {
 	/**
 	 * Returns a collection of records bound to the name. The provided name can
 	 * include wild-card characters - % or ? - to match multiple records.
+	 * 
+	 * @param orgName
+	 *            Name of organization (may contain pattern)
+	 * @return Collection of records matching provided organization name
+	 * @throws UDDINamingException
+	 *             if list fails
 	 */
 	public Collection<UDDIRecord> listRecords(String orgName) throws UDDINamingException {
 		try {
@@ -350,6 +406,13 @@ public class UDDINaming {
 	/**
 	 * Returns a collection of URLs bound to the name. The provided name can
 	 * include wild-card characters - % or ? - to match multiple records.
+	 * 
+	 * @param orgName
+	 *            Name of organization (may contain pattern)
+	 * @return Collection of URLs belonging to organizations that match the
+	 *         provided organization name
+	 * @throws UDDINamingException
+	 *             if list fails
 	 */
 	public Collection<String> list(String orgName) throws UDDINamingException {
 		orgName = validateAndTrimStringArg(orgName, "Organization name");
@@ -361,7 +424,15 @@ public class UDDINaming {
 		return urls;
 	}
 
-	/** Returns the first record associated with the specified name */
+	/**
+	 * Returns the first record associated with the specified name.
+	 * 
+	 * @param orgName
+	 *            Name of organization (may contain pattern)
+	 * @return First record associated with name or null
+	 * @throws UDDINamingException
+	 *             if lookup fails
+	 */
 	public UDDIRecord lookupRecord(String orgName) throws UDDINamingException {
 		try {
 			orgName = validateAndTrimStringArg(orgName, "Organization name");
@@ -378,7 +449,15 @@ public class UDDINaming {
 		throw new IllegalStateException("UDDINamingException should have been thrown!");
 	}
 
-	/** Returns the first URL associated with the specified name */
+	/**
+	 * Returns the first URL associated with the specified name.
+	 * 
+	 * @param orgName
+	 *            Name of organization (may contain pattern)
+	 * @return First URL associated with name or null
+	 * @throws UDDINamingException
+	 *             if lookup fails
+	 */
 	public String lookup(String orgName) throws UDDINamingException {
 		orgName = validateAndTrimStringArg(orgName, "Organization name");
 
@@ -389,7 +468,14 @@ public class UDDINaming {
 			return record.getUrl();
 	}
 
-	/** Destroys the binding for the specified name */
+	/**
+	 * Destroys the binding for the specified name.
+	 * 
+	 * @param orgName
+	 *            Name of organization (may contain pattern)
+	 * @throws UDDINamingException
+	 *             if unbind fails
+	 */
 	public void unbind(String orgName) throws UDDINamingException {
 		try {
 			orgName = validateAndTrimStringArg(orgName, "Organization name");
@@ -406,13 +492,29 @@ public class UDDINaming {
 		}
 	}
 
-	/** Binds the specified name to a URL */
+	/**
+	 * Binds the specified name to a URL.
+	 * 
+	 * @param orgName
+	 *            Name of organization
+	 * @param url
+	 *            Service URL to register
+	 * @throws UDDINamingException
+	 *             if bind fails
+	 */
 	public void bind(String orgName, String url) throws UDDINamingException {
 		UDDIRecord record = new UDDIRecord(orgName, url);
 		bind(record);
 	}
 
-	/** Binds the specified record containing a name and a URL */
+	/**
+	 * Binds the specified record containing a name and a URL.
+	 * 
+	 * @param record
+	 *            Record to register
+	 * @throws UDDINamingException
+	 *             if bind fails
+	 */
 	public void bind(UDDIRecord record) throws UDDINamingException {
 		try {
 			if (record == null)
@@ -431,13 +533,31 @@ public class UDDINaming {
 
 	}
 
-	/** Rebinds the specified name to a new URL */
+	/**
+	 * Rebinds the specified name to a new URL.
+	 * Existing record is overwritten.
+	 *
+	 * @param orgName
+	 *            Name of organization
+	 * @param url
+	 *            Service URL to register
+	 * @throws UDDINamingException
+	 *             if rebind fails
+	 */
 	public void rebind(String orgName, String url) throws UDDINamingException {
 		UDDIRecord record = new UDDIRecord(orgName, url);
 		rebind(record);
 	}
 
-	/** Rebinds the specified record containing a name and a new URL */
+	/**
+	 * Rebinds the specified record containing a name and a new URL.
+	 * Existing record is overwritten.
+	 * 
+	 * @param record
+	 *            Record to register
+	 * @throws UDDINamingException
+	 *             if rebind fails
+	 */
 	public void rebind(UDDIRecord record) throws UDDINamingException {
 		try {
 			if (record == null)
@@ -460,7 +580,7 @@ public class UDDINaming {
 	// private implementation
 	//
 
-	/** helper method to validate string and trim its value */
+	/** Helper method to validate string and trim its value. */
 	private String validateAndTrimStringArg(String string, String name) {
 		if (string == null)
 			throw new IllegalArgumentException(name + " cannot be null!");
@@ -470,7 +590,7 @@ public class UDDINaming {
 		return string;
 	}
 
-	/** query UDDI and return a list of records */
+	/** Queries UDDI and returns a list of records. */
 	private List<UDDIRecord> queryAll(String orgName) throws JAXRException {
 		List<UDDIRecord> records = new ArrayList<UDDIRecord>();
 
@@ -517,7 +637,7 @@ public class UDDINaming {
 		return records;
 	}
 
-	/** query UDDI and return first record */
+	/** Queries UDDI and returns first record. */
 	private UDDIRecord query(String orgName) throws JAXRException {
 		List<UDDIRecord> listResult = queryAll(orgName);
 		int listResultSize = listResult.size();
@@ -535,7 +655,7 @@ public class UDDINaming {
 		}
 	}
 
-	/** delete all records that match organization name from UDDI */
+	/** Deletes all records that match organization name from UDDI. */
 	private boolean deleteAll(String orgName) throws JAXRException {
 
 		Collection<String> findQualifiers = new ArrayList<String>();
@@ -576,8 +696,8 @@ public class UDDINaming {
 	}
 
 	/**
-	 * publish a record to UDDI with derived service name and binding
-	 * description
+	 * Publishes a record to UDDI with derived service name and binding
+	 * description.
 	 */
 	private boolean publish(UDDIRecord record) throws JAXRException {
 		// derive other names from organization name
@@ -593,8 +713,8 @@ public class UDDINaming {
 	}
 
 	/**
-	 * publish a record to UDDI with provided service name and binding
-	 * description
+	 * Publishes a record to UDDI with provided service name and binding
+	 * description.
 	 */
 	private boolean publish(String orgName, String serviceName, String bindingDescription, String bindingURL)
 			throws JAXRException {
