@@ -22,3 +22,10 @@ bin/
 
 # Maven
 target/
+
+# IntelliJ IDEA
+.idea/
+*.iws
+out/
+.idea_modules/
+atlassian-ide-plugin.xml
