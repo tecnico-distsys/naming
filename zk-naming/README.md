@@ -1,6 +1,6 @@
-# UDDI-Naming
+# ZK-Naming
 
-This is a Java library to simplify the access to UDDI registries (namely jUDDI).
+This is a Java library to simplify the access to Apache ZooKeeper, and to provide simple naming services.
 
 
 ## Instructions using Maven
