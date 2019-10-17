@@ -40,7 +40,8 @@ public class ZKNaming {
 	
 	
 	/**
-	 * 
+	 * @param zkUrl
+	 * 		ZooKeeper url in format host:port
 	 */
 	public ZKNaming (String zkUrl) {
 		this.zkUrl = zkUrl;
@@ -48,7 +49,13 @@ public class ZKNaming {
 	
 	
 	
-	
+	/**
+	 * 
+	 * @param host
+	 * 		ZooKeeper host
+	 * @param port
+	 * 		ZooKeeper port
+	 */		
 	public ZKNaming (String host, String port) {
 		this(new String (host + ":" + port));
 	}
