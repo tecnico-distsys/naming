@@ -54,7 +54,7 @@ public class ZKNamingIT extends BaseIT {
 	public void testBindLookup() throws Exception {
 		
 		// publish
-		zkNaming.bind(TEST_PATH, TEST_URI);
+		zkNaming.rebind(TEST_PATH, TEST_URI);
 		
 		//query
 		ZKRecord outputRecord = zkNaming.lookup(TEST_PATH);

@@ -16,7 +16,7 @@ import org.apache.zookeeper.data.Stat;
 
 
 /**
- * 
+ * This class defines simple methods to bind service names to URI addresses: list, lookup, unbind, bind, rebind.
  * 
  * @author Rui Claro
  *
@@ -186,9 +186,10 @@ public class ZKNaming {
 			if (record == null)
 				throw new IllegalArgumentException("ZKRecord cannot be null!");
 			stat = zoo.exists(record.getPath(), true);
-			if (stat == null) 
-				throw new ZKNamingException("zNode not found. Use bind.");
-			
+			if (stat == null) {
+				bind(record);	
+				return;
+			}
 			//Found zNode on path, overwrite data.
 			zoo.setData(record.getPath(), record.getURI().getBytes(), stat.getVersion());
 						
