@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
@@ -126,6 +127,27 @@ public class ZKNaming {
 			else 
 				throw new ZKNamingException("zNode already exists. Use rebind.");
 				
+		}catch (KeeperException e) {
+			if (e.code().equals(KeeperException.Code.NONODE)) {
+				
+				try {
+				
+					String[] parts = record.getPath().split("/");
+					String newpath = "";
+					for (String part : parts) {
+						if (part.equals(""))
+							continue;
+						newpath = newpath + "/" + part;
+						zoo.create(newpath, null ,ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+					}
+					rebind(record);
+					
+				}catch (Exception ex) {
+					throw new ZKNamingException("bind",ex);				
+				}
+					
+			}
+				
 		} catch (Exception e) {
 			throw new ZKNamingException("bind",e);
 		}finally {
@@ -193,6 +215,7 @@ public class ZKNaming {
 			//Found zNode on path, overwrite data.
 			zoo.setData(record.getPath(), record.getURI().getBytes(), stat.getVersion());
 						
+		
 		}catch (Exception e) {
 			throw new ZKNamingException("rebind", e);
 		}finally {
@@ -359,6 +382,9 @@ public class ZKNaming {
 			close();
 		}
 	}
+	
+	
+	//TODO UnbindALL
 	
 	
 	

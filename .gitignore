@@ -29,3 +29,6 @@ target/
 out/
 .idea_modules/
 atlassian-ide-plugin.xml
+/.metadata/
+
+*.log

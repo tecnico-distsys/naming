@@ -19,6 +19,7 @@ public class ZKNamingIT extends BaseIT {
 	
 	// static members
 	static final String TEST_PATH = "/TestServiceName";
+	static final String TEST_PATH_CHILD = "/TestService/TestChild";
 	static final String TEST_URI = "host:port";
 
 	static final String TEST_PATH_WILDCARD = TEST_PATH.substring(0, 14) + "%";
@@ -44,14 +45,20 @@ public class ZKNamingIT extends BaseIT {
 	
 	@After
 	public void tearDown() throws Exception{
-		zkNaming.unbind(TEST_PATH, TEST_URI);
 		zkNaming = null;
 	}
 	
 	// tests 
 	
+	public void tearDownUnbind() throws ZKNamingException {
+		zkNaming.unbind(TEST_PATH, TEST_URI);
+	}
+	public void tearDownUnbindChild() throws ZKNamingException  {
+		zkNaming.unbind(TEST_PATH_CHILD, TEST_URI);
+	}
+	
 	@Test
-	public void testBindLookup() throws Exception {
+	public void testRebindLookup() throws Exception {
 		
 		// publish
 		zkNaming.rebind(TEST_PATH, TEST_URI);
@@ -61,8 +68,79 @@ public class ZKNamingIT extends BaseIT {
 		assertNotNull(outputRecord);
 		
 		assertEquals(TEST_URI, outputRecord.getURI());
-				
+		assertEquals(TEST_PATH, outputRecord.getPath());
+		tearDownUnbind();
 	}
 	
-	//TODO
+	@Test
+	public void testBindLookup() throws Exception {
+		zkNaming.rebind(TEST_PATH, TEST_URI);
+		
+		//query
+		ZKRecord outputRecord = zkNaming.lookup(TEST_PATH);
+		assertNotNull(outputRecord);
+		
+		assertEquals(TEST_URI, outputRecord.getURI());
+		assertEquals(TEST_PATH, outputRecord.getPath());
+
+		tearDownUnbind();
+	}
+	
+	@Test
+	public void testBindLookupChild() throws Exception {
+		
+		zkNaming.bind(TEST_PATH_CHILD,TEST_URI);
+		
+		//query
+		ZKRecord outputRecord = zkNaming.lookup(TEST_PATH_CHILD);
+		assertNotNull(outputRecord);
+		
+		assertEquals(TEST_URI, outputRecord.getURI());
+		assertEquals(TEST_PATH_CHILD, outputRecord.getPath());
+
+		tearDownUnbindChild();
+	}
+	
+	@Test
+	public void testRebindLookupChild() throws Exception {
+		
+		zkNaming.rebind(TEST_PATH_CHILD,TEST_URI);
+		
+		//query
+		ZKRecord outputRecord = zkNaming.lookup(TEST_PATH_CHILD);
+		assertNotNull(outputRecord);
+		
+		assertEquals(TEST_URI, outputRecord.getURI());
+		assertEquals(TEST_PATH_CHILD, outputRecord.getPath());
+
+		tearDownUnbindChild();
+	}
+	
+	@Test
+	public void testRebindLookupRecord() throws Exception {
+		
+		ZKRecord rec = new ZKRecord(TEST_PATH_CHILD, TEST_URI);
+		zkNaming.rebind(rec);
+		
+		//query
+		ZKRecord outputRecord = zkNaming.lookup(TEST_PATH_CHILD);
+		assertNotNull(outputRecord);
+		
+		assertEquals(rec, outputRecord);
+		assertEquals(TEST_PATH_CHILD, outputRecord.getPath());
+
+		tearDownUnbindChild();
+
+	}
+	
+	
+	//TODO test LIST and UNBIND ALL
+	
+	
+	
+	
+	
+	
+	
+	
 }
