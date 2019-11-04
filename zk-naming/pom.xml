@@ -5,7 +5,7 @@
 
     <groupId>pt.ulisboa.tecnico.sdis</groupId>
     <artifactId>zk-naming</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <packaging>jar</packaging>
 
     <name>ZooKeeper Naming</name>

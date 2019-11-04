@@ -19,8 +19,14 @@ public class ZKNamingIT extends BaseIT {
 	
 	// static members
 	static final String TEST_PATH = "/TestServiceName";
+	static final String TEST_PATH_CHILD2 = "/TestService/TestChild2";
 	static final String TEST_PATH_CHILD = "/TestService/TestChild";
 	static final String TEST_URI = "host:port";
+	static final String TEST_URI_CHILD1 = "child1:port";
+	static final String TEST_URI_CHILD2 = "child2:port";
+	
+	static final String TEST_PATH_4LVL_A = "/TestService/lvl2/lvl3A/child1";
+	static final String TEST_PATH_4LVL_B = "/TestService/lvl2/lvl3B/child1";
 
 	static final String TEST_PATH_WILDCARD = TEST_PATH.substring(0, 14) + "%";
 	
@@ -53,8 +59,8 @@ public class ZKNamingIT extends BaseIT {
 	public void tearDownUnbind() throws ZKNamingException {
 		zkNaming.unbind(TEST_PATH, TEST_URI);
 	}
-	public void tearDownUnbindChild() throws ZKNamingException  {
-		zkNaming.unbind(TEST_PATH_CHILD, TEST_URI);
+	public void tearDownUnbindChild(String path) throws ZKNamingException  {
+		zkNaming.unbind(path, "");
 	}
 	
 	@Test
@@ -98,7 +104,7 @@ public class ZKNamingIT extends BaseIT {
 		assertEquals(TEST_URI, outputRecord.getURI());
 		assertEquals(TEST_PATH_CHILD, outputRecord.getPath());
 
-		tearDownUnbindChild();
+		tearDownUnbindChild(TEST_PATH_CHILD);
 	}
 	
 	@Test
@@ -113,7 +119,7 @@ public class ZKNamingIT extends BaseIT {
 		assertEquals(TEST_URI, outputRecord.getURI());
 		assertEquals(TEST_PATH_CHILD, outputRecord.getPath());
 
-		tearDownUnbindChild();
+		tearDownUnbindChild(TEST_PATH_CHILD);
 	}
 	
 	@Test
@@ -129,10 +135,67 @@ public class ZKNamingIT extends BaseIT {
 		assertEquals(rec, outputRecord);
 		assertEquals(TEST_PATH_CHILD, outputRecord.getPath());
 
-		tearDownUnbindChild();
+		tearDownUnbindChild(TEST_PATH_CHILD);
 
 	}
 	
+	@Test
+	public void test2Children() throws Exception {
+		
+		ZKRecord rec1 = new ZKRecord(TEST_PATH_CHILD, TEST_URI_CHILD1);
+		zkNaming.rebind(rec1);
+		
+		ZKRecord rec2 = new ZKRecord(TEST_PATH_CHILD2, TEST_URI_CHILD2);
+		zkNaming.rebind(rec2);
+		
+		//query
+		ZKRecord outputRecord1 = zkNaming.lookup(TEST_PATH_CHILD);
+		assertNotNull(outputRecord1);
+		
+		assertEquals(rec1, outputRecord1);
+		assertEquals(TEST_PATH_CHILD, outputRecord1.getPath());
+		
+		ZKRecord outputRecord2 = zkNaming.lookup(TEST_PATH_CHILD2);
+		assertNotNull(outputRecord2);
+		
+		assertEquals(rec2, outputRecord2);
+		assertEquals(TEST_PATH_CHILD2, outputRecord2.getPath());
+		
+
+		tearDownUnbindChild(TEST_PATH_CHILD);
+		tearDownUnbindChild(TEST_PATH_CHILD2);
+
+		
+	}
+	
+	@Test
+public void testDiffSubpath() throws Exception {
+		
+		ZKRecord rec1 = new ZKRecord(TEST_PATH_4LVL_A, TEST_URI_CHILD1);
+		zkNaming.rebind(rec1);
+		
+		ZKRecord rec2 = new ZKRecord(TEST_PATH_4LVL_B, TEST_URI_CHILD2);
+		zkNaming.rebind(rec2);
+		
+		//query
+		ZKRecord outputRecord1 = zkNaming.lookup(TEST_PATH_4LVL_A);
+		assertNotNull(outputRecord1);
+		
+		assertEquals(rec1, outputRecord1);
+		assertEquals(TEST_PATH_4LVL_A, outputRecord1.getPath());
+		
+		ZKRecord outputRecord2 = zkNaming.lookup(TEST_PATH_4LVL_B);
+		assertNotNull(outputRecord2);
+		
+		assertEquals(rec2, outputRecord2);
+		assertEquals(TEST_PATH_4LVL_B, outputRecord2.getPath());
+		
+
+		tearDownUnbindChild(TEST_PATH_4LVL_A);
+		tearDownUnbindChild(TEST_PATH_4LVL_B);
+
+		
+	}
 	
 	//TODO test LIST and UNBIND ALL
 	

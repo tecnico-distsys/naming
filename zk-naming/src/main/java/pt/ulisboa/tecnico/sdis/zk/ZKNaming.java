@@ -138,7 +138,8 @@ public class ZKNaming {
 						if (part.equals(""))
 							continue;
 						newpath = newpath + "/" + part;
-						zoo.create(newpath, null ,ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+						if(zoo.exists(newpath, true) == null)
+							zoo.create(newpath, null ,ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 					}
 					rebind(record);
 					
