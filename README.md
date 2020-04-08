@@ -6,6 +6,8 @@ Developed at **I**nstituto **S**uperior **T**écnico, Universidade de Lisboa, Po
 
 The UDDI-Naming library provides a JAX-R wrapper that emulates JNDI Naming interface with _bind_ and _lookup_ operations.
 
+The ZK-Naming library provides a ZooKeeper client wrapper that also emulates _bind_ and _lookup_.
+
 
 ## Getting Started
 
@@ -33,9 +35,10 @@ javac -version
 mvn -version
 ```
 
-For UDDI-Naming, a [jUDDI](https://juddi.apache.org/) server is required.
-
+For UDDI-Naming, a [jUDDI](https://juddi.apache.org/) server is required.  
 You can find a version of jUDDI configured to use port 9090 at the [Distributed Systems course page (in Portuguese)](http://disciplinas.tecnico.ulisboa.pt/leic-sod/2017-2018/labs/software/index.html).
+
+For ZK-Naming, [ZooKeeper](https://zookeeper.apache.org/) server is required.
 
 
 ### Installing
@@ -58,7 +61,6 @@ Add additional notes about how to deploy this on a live system
 ## Built With
 
 * [Maven](https://maven.apache.org/) - Build Tool and Dependency Management
-* [JAX-WS](https://javaee.github.io/metro-jax-ws/) - SOAP Web Services implementation for Java
 
 <!--
 ## Contributing
@@ -78,6 +80,7 @@ For the versions available, see the [tags on this repository](https://github.com
 ## Authors
 
 * **Miguel L. Pardal** - *Design and implementation* - [miguelpardal](https://github.com/miguelpardal)
+* **Rui Claro** - *ZK-Naming implementation* - [RuiClaro](https://github.com/RuiClaro)
 
 See also the list of [contributors](https://github.com/tecnico-distsys/naming/contributors) who participated in this project.
 
