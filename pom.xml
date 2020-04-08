@@ -11,6 +11,7 @@
     <modules>
         <!-- modules to include in the build reactor -->
         <module>uddi-naming</module>
+        <module>zk-naming</module>
     </modules>
 
 </project>
