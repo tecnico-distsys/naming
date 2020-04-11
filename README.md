@@ -19,7 +19,7 @@ A naming library is intended to simplify the use of naming servers in applicatio
 The two typical operations are:
 
 * _bind(name, value)_ - associate the name with the given value
-* value _lookup(name)_ - search for the name and return its value
+* _value lookup(name)_ - search for the name and return its value
  
 
 ### Prerequisites
