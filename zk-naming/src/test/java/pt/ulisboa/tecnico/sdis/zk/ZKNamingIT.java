@@ -1,7 +1,10 @@
 package pt.ulisboa.tecnico.sdis.zk;
 
+import java.util.Collection;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -192,6 +195,31 @@ public class ZKNamingIT extends BaseIT {
 
 	}
 
-	// TODO test LIST and UNBIND ALL
+	@Test
+	public void testListRecords() throws Exception {
+
+		final String path = "/grpc/main/server";
+		final String path1 = path + "/1";
+		final String path2 = path + "/2";
+
+		ZKRecord record_1 = new ZKRecord(path1, "host1:1000");
+		zkNaming.rebind(record_1);
+
+		ZKRecord record_2 = new ZKRecord(path2, "host2:2000");
+		zkNaming.rebind(record_2);
+
+		// query
+		Collection<ZKRecord> results = zkNaming.listRecords(path);
+		assertNotNull(results);
+		assertEquals(2, results.size());
+
+		assertTrue(results.contains(record_1));
+		assertTrue(results.contains(record_2));
+
+		tearDownUnbindChild(path1);
+		tearDownUnbindChild(path2);
+	}
+
+	// TODO test UNBIND ALL
 
 }
