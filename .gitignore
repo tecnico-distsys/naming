@@ -32,3 +32,6 @@ atlassian-ide-plugin.xml
 /.metadata/
 
 *.log
+
+# VSCode
+.vscode/
