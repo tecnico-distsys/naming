@@ -6,7 +6,7 @@
 
 	<groupId>pt.ulisboa.tecnico.sdis</groupId>
 	<artifactId>zk-naming</artifactId>
-	<version>1.0.3</version>
+	<version>1.0.4</version>
 	<packaging>jar</packaging>
 
 	<name>ZooKeeper Naming</name>
@@ -28,13 +28,14 @@
 		<dependency>
 			<groupId>org.apache.zookeeper</groupId>
 			<artifactId>zookeeper</artifactId>
-			<version>3.6.0</version>
+			<version>3.6.2</version>
 		</dependency>
 		<!-- JUnit -->
+		<!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-engine -->
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-engine</artifactId>
-			<version>5.6.0</version>
+			<version>5.7.1</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -47,9 +48,10 @@
 			</testResource>
 		</testResources>
 		<plugins>
+			<!-- The Failsafe Plugin is designed to run integration tests (while the Surefire Plugin is designed to run unit tests). -->
 			<plugin>
 				<artifactId>maven-failsafe-plugin</artifactId>
-				<version>3.0.0-M4</version>
+				<version>3.0.0-M5</version>
 				<executions>
 					<execution>
 						<goals>
@@ -59,6 +61,7 @@
 					</execution>
 				</executions>
 			</plugin>
+			<!-- The Apache Maven Javadoc Plugin is a plugin that uses the javadoc tool for generating javadocs for the specified project. -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
